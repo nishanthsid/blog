@@ -21,20 +21,6 @@ function HomepageHeader() {
         <p className="hero__subtitle">
           A place to write things down.
         </p>
-
-        <div className={styles.buttons}>
-          <Link
-            className="button button--primary button--lg margin-right--md"
-            to="/docs">
-            Docs
-          </Link>
-
-          <Link
-            className="button button--secondary button--lg margin-right--md"
-            to="/blog">
-            Blog
-          </Link>
-        </div>
       </div>
     </header>
   );
