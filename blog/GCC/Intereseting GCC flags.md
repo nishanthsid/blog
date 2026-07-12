@@ -1,3 +1,10 @@
+---
+slug: interesting-gcc-flags
+title: Interesting GCC Flags
+tags: [gcc, compiler]
+---
+
+
 # Interesting GCC flags
 
 In this article, I'll go over some useful GCC (GNU C Compiler) flags that I frequently use, along with what they do and when they're useful. 
