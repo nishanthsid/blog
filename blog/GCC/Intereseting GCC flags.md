@@ -4,7 +4,6 @@ title: Interesting GCC Flags
 tags: [gcc, compiler]
 ---
 
-
 # Interesting GCC flags
 
 In this article, I'll go over some useful GCC (GNU C Compiler) flags that I frequently use, along with what they do and when they're useful.
@@ -37,11 +36,9 @@ Each of these optimization levels deserves its own blog post, but for now it's e
 
 `-O2` provides a nice balance between performance and code size, and you may use it in your builds.
 
-:::tip Fun fact
+**Fun fact**
 
 LeetCode compiles C submissions using `-O2`, so your solutions already benefit from GCC's production-grade optimizations.
-
-```
 
 ---
 
@@ -77,14 +74,13 @@ gcc app.c -I/home/user/project/include -o app
 
 The above command asks the compiler to look for header files in the path `/home/user/project/include`.
 
-
-If you are using this flag, the header files in the path can be directly used with
+If you are using this flag, the header files in that directory can be directly included using
 
 ```c
 #include <myheader.h>
 ```
 
-instead of the standard
+instead of
 
 ```c
 #include "myheader.h"
@@ -92,7 +88,7 @@ instead of the standard
 
 #### But bro, why do I need to use it?
 
-This is particularly useful when your project grows and you need to keep all your header files in a dedicated `include/` directory. This flag enables you to structure your code in an elegant way.
+This is particularly useful when your project grows and you need to keep all your header files in a dedicated `include/` directory. This flag enables you to structure your code in a much cleaner way.
 
 ---
 
@@ -108,19 +104,19 @@ You can think of it as adding another shelf to a library. When GCC needs to find
 gcc app.c -I/home/user/project/include -L/home/user/project/lib -lmylib -o app
 ```
 
-In the above example, we try to compile `app.c` with the library named `libmylib.so` (the naming convention lets us omit the `lib` prefix and the extension) present in the path `/home/user/project/lib`.
+In the above example, we compile `app.c` and link it against the library `libmylib.so` located in `/home/user/project/lib`. GCC follows a naming convention that lets us omit both the `lib` prefix and the file extension.
 
-> This linking is an interesting concept on its own. The aspect of static and dynamic linking is so interesting that it deserves its own blog post.
+> Linking is an interesting topic on its own. Static and dynamic linking deserve an entire blog post.
 
 ---
 
 ## Link this library flag `-l`
 
-We have already seen how this flag is used in the above example.
+We have already seen how this flag is used in the previous example.
 
-GCC follows a naming convention when using this flag: omit the `lib` prefix and the library extension.
+The `-l` flag tells GCC **which** library to link against. GCC searches for that library in its default library directories as well as any directories specified using `-L`.
 
-This flag tells GCC **which** library to link against. GCC searches for that library in its default library directories as well as any directories specified using `-L`.
+GCC follows a simple naming convention: omit the `lib` prefix and the library extension.
 
 **Naming convention**
 
@@ -132,5 +128,3 @@ Library file : libmylib.so
 GCC flag     : -lmylib
                 ^^^^^
 ```
-
-
