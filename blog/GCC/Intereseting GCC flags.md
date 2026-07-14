@@ -122,9 +122,77 @@ GCC follows a simple naming convention: omit the `lib` prefix and the library ex
 
 ```text
 Library file : libmylib.so
-               ^^^      ^^^
+               ^^^     ^^^
               omit     omit
 
 GCC flag     : -lmylib
                 ^^^^^
 ```
+
+
+## Enable debugging information flag `-g`
+
+
+
+This lets you debug your binaries with debuggers like `gdb` 
+
+
+
+```bash
+
+gcc -g main.c -O0 -o main
+
+```
+
+
+
+and then
+
+
+
+```bash
+
+gdb ./main
+
+```
+
+
+
+```bash
+
+(gdb) break main
+
+(gdb) run
+
+...
+
+...
+
+```
+
+
+
+### bro, wait we can understand `-g` but why does the example have `-O0`?
+
+
+
+Remember in the -O flag section, we discussed that -O0 keeps the generated machine code closely aligned with the source code
+
+Optimizations, if enabled might remove some of your local variables and much more. So for debugging it is better to compile the binary with -O0
+
+
+
+> **Note**
+
+>
+
+> You can still use `-g` together with optimization levels such as `-O2`. However, some variables may appear as `<optimized out>` in GDB because the compiler has optimized them away.
+
+
+
+### Does this flag affect my program behavior?
+
+
+
+Nope, it may make your binaries a little bit bigger but, the behavior remains the same. It adds debugging metadata in elf sections that debugging tools can use
+
