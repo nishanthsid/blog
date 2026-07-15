@@ -12,7 +12,7 @@ The job of a bootloader is simple, in this context we can simply assume the job 
 
 ---
 
-## Bro, the term sounds scary, how to even start writing meaningful bootloader code? 😭
+## The term sounds scary, how to even start writing meaningful bootloader code?
 
 This is understandable, because bootloaders are something that operate with very minimal support.
 
@@ -56,7 +56,7 @@ EFI_STATUS EFIAPI efi_main(
 
 ---
 
-## Broo, what is this 😭😭😭?
+## Umm, what is happening in this code?
 
 Don't worry.
 
