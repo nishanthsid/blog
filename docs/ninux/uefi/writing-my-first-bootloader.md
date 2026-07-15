@@ -73,7 +73,7 @@ Let's break this program down one line at a time.
 #include <efilib.h>
 ```
 
-Let's breakdown what these headers actually have
+Let's break down what these headers actually have
 
 **efi.h** has all the definitions of the `types` we use in UEFI programming.
 what do we mean by that is that it allows us to use all the UEFI related types in our program
