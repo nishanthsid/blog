@@ -56,7 +56,7 @@ const config: Config = {
     image: "img/social-card.png",
 
     navbar: {
-      title: "Nishanth",
+      title: "NishBlog &Notes",
       logo: {
         alt: "Nishanth Logo",
         src: "img/logo.svg",
