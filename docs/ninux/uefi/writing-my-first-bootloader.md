@@ -1,4 +1,4 @@
-# Writing my first bootloader
+# Writing my first bootloader using GNU-EFI
 
 First of all, what are we going to achieve from this after document now that we have a basic understanding of UEFI?
 
@@ -8,7 +8,9 @@ The goal of this page is to give a formal introduction to the programmatic usage
 
 ## What is the job of a bootloader?
 
-The job of a bootloader is simple. In this context, we can assume that a bootloader works in tandem with the firmware to load the kernel of an operating system into memory and formally hand over the entire machine to it.
+The job of a bootloader is simple.
+
+In this context, we can assume that a bootloader works in tandem with the firmware to load the kernel of an operating system into memory and formally hand over the entire machine to it.
 
 ---
 
@@ -24,7 +26,7 @@ If we don't understand how each component helps in the overall process, bootload
 
 ---
 
-## Let's get our first UEFI application
+# Let's get our first UEFI application
 
 The goal here is very simple.
 
@@ -56,7 +58,7 @@ EFI_STATUS EFIAPI efi_main(
 
 ---
 
-## Umm, what is happening in this code?
+# Umm, what is happening in this code?
 
 Don't worry.
 
@@ -66,36 +68,53 @@ Unlike a normal C program, there is no `main()`, there is no `printf()`, and eve
 
 Let's break this program down one line at a time.
 
-### Let's start from the header files
+---
+
+## Let's start from the header file efi.h
 
 ```c
 #include <efi.h>
-#include <efilib.h>
 ```
 
-Let's break down what these headers actually contain.
+Let's break down what this header actually contain.
 
-`efi.h` contains the definitions of the types used throughout UEFI programming. In other words, it allows us to use all the UEFI-related types in our program.
+`efi.h` contains the definitions of the types used throughout UEFI programming.
 
-It also provides several useful macros. For now, let's focus only on the types and macros it provides. We'll understand why they are needed later in this document.
+In other words, it allows us to use all the UEFI-related types in our program.
 
-#### What even are UEFI types?
+It also provides several useful macros.
+
+For now, let's focus only on the types and macros it provides.
+
+We'll understand why they are needed later in this document.
+
+---
+
+### What even are UEFI types?
 
 This is a good question.
 
 UEFI defines its own set of data types so that code remains portable across different architectures and compiler implementations.
 
-For example, `UINTN` represents an unsigned integer whose size is the same as the native pointer size of the architecture. On x86-64 systems, `UINTN` is 64 bits, making it equivalent to `uint64_t`.
+For example, `UINTN` represents an unsigned integer whose size is the same as the native pointer size of the architecture.
 
-##### But why create a definition for an already existing type?
+On x86-64 systems, `UINTN` is 64 bits, making it equivalent to `uint64_t`.
+
+---
+
+### But why create a definition for an already existing type?
 
 Great question.
 
-UEFI needs to work across many different systems. A system might be 32-bit, 64-bit, or use a completely different processor architecture.
+UEFI needs to work across many different systems.
+
+A system might be 32-bit, 64-bit, or use a completely different processor architecture.
 
 These definitions abstract away architecture-specific details so that `UINTN` always represents "an unsigned integer with the size of a native pointer," regardless of the underlying platform.
 
-##### How does `efi.h` know which architecture it is being compiled for?
+---
+
+### How does `efi.h` know which architecture it is being compiled for?
 
 Our source code doesn't explicitly know what architecture it is being compiled for.
 
@@ -109,11 +128,15 @@ typedef <64-bit compatible type> UINTN;
 #endif
 ```
 
-##### But how does the preprocessor know whether the architecture is 32-bit or 64-bit?
+---
+
+### But how does the preprocessor know whether the architecture is 32-bit or 64-bit?
 
 Exactly.
 
-The compiler provides the preprocessor with a number of predefined macros that describe the target architecture. The preprocessor can then use these macros to decide which parts of a header file should be included.
+The compiler provides the preprocessor with a number of predefined macros that describe the target architecture.
+
+The preprocessor can then use these macros to decide which parts of a header file should be included.
 
 A simplified version of the real `efi.h` would look something like this:
 
@@ -135,10 +158,12 @@ A simplified version of the real `efi.h` would look something like this:
 
 Notice how `UINTN` changes depending on the target architecture.
 
-##### Common compiler predefined architecture macros
+---
+
+### Common compiler predefined architecture macros
 
 | Architecture | Common predefined macros |
-|--------------|--------------------------|
+| :----------- | :----------------------- |
 | x86-64 | `__x86_64__`, `_M_X64` (MSVC) |
 | x86 (32-bit) | `__i386__`, `_M_IX86` |
 | ARM64 (AArch64) | `__aarch64__`, `_M_ARM64` |
@@ -148,7 +173,9 @@ Notice how `UINTN` changes depending on the target architecture.
 | PowerPC 64 | `__powerpc64__` |
 | PowerPC 32 | `__powerpc__` |
 
-##### Seeing these macros yourself
+---
+
+### Seeing these macros yourself
 
 You can inspect these predefined macros yourself:
 
@@ -175,7 +202,124 @@ For example, on an x86-64 machine, you may see entries like these:
 ...
 ```
 
-
 Now I believe I have given a simple introduction to `efi.h`, why it exists and how it eases our job with portability.
+
+---
+---
+
+## The header efilib.h
+
+```c
+#include <efilib.h>
+```
+
+Now we have a good understanding of the reason why headers files are written they way they are. With this, let's continue understanding this header `efilib.h`
+
+This header contains the declarations of the functions we use in our UEFI gnu-efi code such as `InitializeLib`, `Print`, `uefi_call_wrapper` etc. **Rather than trying to understand every function now, we'll introduce them one by one as they become relevant.**
+
+## The line - EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+
+This is where the most understanding might be needed from us. Every word in this line in our code is filled to brim with interesting information.
+
+We'll dissect the code and understand each and every part of it one by one.
+
+### EFI_STATUS
+
+Remember our trusty `efi.h`. This type is defined in this header and this is in a way a  typedef used throughout UEFI to represent operation status. 
+
+**EFI_STATUS** type is a numeric type under the hood whose primary objective is to store the **Status** of a UEFI operation.
+
+`efi.h` also provides us a handy macro named `EFI_ERROR(EFI_STATUS)` to check if an EFI_STATUS variable is having an error code or not
+
+Some values defined in `efi.h` for EFI_STATUS are `EFI_SUCCESS`, `EFI_NOT_FOUND`, `EFI_LOAD_ERROR` etc.
+
+and the macro can be used something like this
+
+```c
+EFI_STATUS Status = EFI_LOAD_ERROR;
+
+if(EFI_ERROR(Status)){
+    Print(L"This is printed in the console");
+}
+```
+
+### EFIAPI
+
+This may feel odd to have another symbol between the type of a function and the function name
+
+Like we are used to seeing function definitions like below
+```c
+
+// Many people are used to seeing functions defined like this
+int add(int a, int b){
+    return a + b;
+}
+
+// But this feels totally odd to have 2 seperate "things" before the function name
+
+EFI_STATUS EFIAPI efi_main(...)
+```
+
+This is completely understandable and there is an interesting concept hiding behind it
+
+Our guy `efi.h` plays a role here as well. `EFIAPI` is just a macro defined there that resolved into as follows
+
+```c
+#define EFIAPI __attribute__((ms_abi))
+```
+
+#### Bro but what is this __attribute__((ms_abi))
+
+A lot of things are happening here. Let's clear them one by one
+
+This single macro is using multiple cool concepts of our compiler and the ABI (Application Binary Interface) itself.
+
+First let's understand this really cool and interesting concept called __attribute__ in gcc.
+
+This __attribute__ allows us to attach specific information about our functions, variables, structures to the compiler. The compiler then uses this attached information to compile the code accordingly
+
+One cool __attribute__ I found very interesting are the `constructor` and `destructor` compiler attributes.
+
+When attached, `constructor` functions get automatically called even before your `main` is run. This is really useful to initialize your libraries.
+
+Similarly, functions attached with `destructor` runs after you main returns and it is useful for any cleanup that might be needed.
+
+Example:
+
+```c
+#include <stdio.h>
+
+void __attribute__((constructor)) init(){
+    printf("Hi from constructor\n");
+}
+
+void __attribute__((destructor)) cleanup(){
+    printf("Hi from destructor\n");
+}
+
+int main(){
+    printf("Hi from main\n");
+    return 0;
+}
+
+//Compiled as prog
+//gcc main.c -o prog
+```
+The result
+```text
+$./prog
+Hi from constructor
+Hi from main
+Hi from destructor
+``` 
+
+**Cool, but what does ms_abi do?**
+
+As you can see, `constructor` and `destructor` completely change when these functions are executed, even though the functions themselves look perfectly ordinary. `ms_abi` is another such attribute, but instead of changing when a function runs, it changes how the function is called.
+
+Essentially, when attached, `ms_abi` asks the compiler to compile the function with the `Microsoft x64 calling convention (ABI)`
+
+#### Bro what is an ABI? What is Microsoft doing here?
+
 
 
