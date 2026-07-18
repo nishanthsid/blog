@@ -321,5 +321,63 @@ Essentially, when attached, `ms_abi` asks the compiler to compile the function w
 
 #### Bro what is an ABI? What is Microsoft doing here?
 
+First let's understand ABI. We all know what APIs are, they simply define what functionalites a system provides to the users.
 
+For example, the web endpoints you create for your backend that are RESTful in nature and speak HTTP, is an example of an API.
 
+The set of functions that the standard C library provides is also an API.
+
+```c
+printf();
+malloc();
+open();
+//etc etc are examples of functionalites provided by the libc "api"
+```
+
+So we can understand ABIs in a similar way. APIs define the functionalities and ABIs define how compiled codes talk to each other.
+
+The responsibilites of an ABI may include:
+
+- What registers to use for the arguments of a function
+- How is the stack used
+- How are exeptions handled etc.
+
+Now I have given a very little introduction to ABIs. They are so vast, explaining them in this document is out of scope.
+
+For now, it is enough to understand that an ABI defines a binary-level standard that every compiler targeting that platform (may include the OS, the architecture or even the word size of the CPU) must follow. This allows object files, libraries, and executables produced by different compilers for the same platform to interoperate seamlessly.
+
+---
+
+**Coming to what ms_abi is**
+
+As mentioned earlier, the `ms_abi` function attribute instructs the compiler to compile a specific function using the Microsoft x64 calling convention.
+
+In other words, `efi_main()` is compiled according to the same ABI used by 64-bit Windows binaries (such as `.exe` files). At the binary level, `efi_main()` follows the Microsoft x64 calling convention, meaning it passes arguments, returns values, manages the stack, and preserves registers exactly as a Windows binary would.
+
+> **Fun Fact:** Unix like kernels (including linux) follow the other famous ABI know as `System V ABI`.
+
+---
+
+#### But why this ABI for UEFI?
+
+In the previous document we understood UEFI bootloaders (or any uefi application written by the user) are generally compiled as `PE/COFF` binaries.
+
+This aspect also extends to how we write and compile our code. UEFI expects the entry point of its application, i.e. `efi_main()` to use the Microsoft x64 ABI.
+
+> **Note:** Only the functions that are called directly by the UEFI firmware are required to follow the Microsoft x64 ABI. This includes the application's entry point, `efi_main()`, and any callbacks that are registered with the firmware.
+>
+> Your own helper functions, internal libraries, and other code are free to use the System V ABI, provided they are only called by other code that follows the same ABI. As long as every firmware-facing function uses the Microsoft x64 ABI, your application will interoperate correctly with UEFI.
+
+---
+
+### `efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)`
+
+Finally we have reached the entry point of our UEFI program. as per conventions `efi_main` is taken as the entry point of an UEFI application.
+
+And if we look at the arguments that are being passed to it, we have two arguments.
+
+One is `ImageHandle` of the type `EFI_HANDLE` (defined in `efi.h`).
+
+The other is a pointer to the type `EFI_SYSTEM_TABLE` (also defined in `efi.h`).
+
+Let's understand what these argumets are in the first place.
