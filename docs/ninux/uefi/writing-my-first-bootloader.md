@@ -268,7 +268,7 @@ Our guy `efi.h` plays a role here as well. `EFIAPI` is just a macro defined ther
 #define EFIAPI __attribute__((ms_abi))
 ```
 
-#### Bro but what is this __attribute__((ms_abi))
+#### But what is this __attribute__((ms_abi))
 
 A lot of things are happening here. Let's clear them one by one
 
@@ -319,7 +319,7 @@ As you can see, `constructor` and `destructor` completely change when these func
 
 Essentially, when attached, `ms_abi` asks the compiler to compile the function with the `Microsoft x64 calling convention (ABI)`
 
-#### Bro what is an ABI? What is Microsoft doing here?
+#### What is an ABI? What is Microsoft doing here?
 
 First let's understand ABI. We all know what APIs are, they simply define what functionalites a system provides to the users.
 
@@ -372,7 +372,7 @@ This aspect also extends to how we write and compile our code. UEFI expects the 
 
 ### `efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)`
 
-Finally we have reached the entry point of our UEFI program. as per conventions `efi_main` is taken as the entry point of an UEFI application.
+Finally we have reached the entry point of our UEFI program. as per conventions `efi_main` is taken as the entry point of a UEFI application.
 
 And if we look at the arguments that are being passed to it, we have two arguments.
 
@@ -381,3 +381,106 @@ One is `ImageHandle` of the type `EFI_HANDLE` (defined in `efi.h`).
 The other is a pointer to the type `EFI_SYSTEM_TABLE` (also defined in `efi.h`).
 
 Let's understand what these argumets are in the first place.
+
+#### EFI_HANDLE ImageHandle
+
+Let's start from the first argument. The first argument a UEFI entry point function expects is this ImageHandle (could be of any name) of type `EFI_HANDLE`
+
+This type EFI_HANDLE when we look into the definition in `efi.h` is as follows
+
+```c
+typedef void VOID
+#define EFI_HANDLE VOID *
+```
+
+This handle is the representation of our own application that is created by UEFI and passed on to us.
+
+Whenever we want to get the information about our program itself. we can pass in the ImageHandle back to UEFI services and get the demanded information.
+
+For example, when we want to know from which storage device our own application was loaded from, we can ask the UEFI Boot services (we will come to this later) to
+by passing in our ImageHandle. The logic is given in the following pseudocode.
+
+```text
+DeviceHandle = UEFI_SERVICE_GET_DEVICE(ImageHandle);
+```
+
+The actual UEFI API is different, but this pseudocode illustrates the general idea: instead of directly accessing the underlying object, we hand the handle back to the firmware and let it perform the lookup.
+
+
+##### So it is essentially a `void *`. Does that mean I can't access anything through this `ImageHandle`?
+
+In practice, yes.
+
+Although `EFI_HANDLE` is just a `void *`, the UEFI specification intentionally does **not** define what object it points to. It is an **opaque handle**, meaning that applications are expected to treat it as an identifier and only pass it back to UEFI services.
+
+You should never attempt to cast it to another pointer type and dereference it, since its internal representation is an implementation detail of the firmware.
+
+This design has several advantages:
+
+- The UEFI firmware developers (not us) are free to change the internal representation of a handle without breaking existing UEFI applications.
+- It prevents applications from depending on firmware internals that are not part of the UEFI specification.
+- It protects firmware-managed resources from accidental or intentional corruption by ensuring they are only accessed through well-defined UEFI interfaces.
+
+#### `EFI_SYSTEM_TABLE *SystemTable`
+
+Now let's see what this second argument is and what its uses are.
+
+Unlike the first argument, which is an **opaque handle**, this argument is a pointer to an actual C structure.
+
+This structure acts as the primary interface between our UEFI application and the firmware. It contains pointers to other structures that expose the various services and interfaces provided by UEFI.
+
+For example, `SystemTable` can be used to access the following:
+
+```c
+// Boot Services
+// Remember, in the previous section we obtained the device handle
+// from our image handle. Boot Services help us perform such operations.
+SystemTable->BootServices;
+
+// Runtime Services
+SystemTable->RuntimeServices;
+
+// Console output (printing text)
+SystemTable->ConOut;
+
+// Console input (reading keyboard input)
+SystemTable->ConIn;
+```
+
+Each of these members is itself a pointer to another structure containing related data and function pointers.
+
+We'll explore each of these structures in detail as we continue building our bootloader.
+
+
+With this we have gone through all the lines before our actual implementation of our `efi_main`. Now let's focus on the actual working of our hello world application.
+
+### InitializeLib(ImageHandle, SystemTable);
+
+This is actually a part of the `gnu-efi`. this function is declared in the `efilib.h` and it initializes the gnu-efi library.
+
+By initializing we mean that the library initializes its helper functions and global variables.
+
+For example, it provides the `SystemTable->BootServices` as the global variable `BS`
+
+And this call let's us use the library specific functions like `Print()`
+
+```c
+Print(L"Hello World!");
+// Notice how we are not passing the SystemTable here for console out
+// This Print function of gnu-efi utilizes the initialized gloabal variables 
+// to print to the console. This lets the developers (us) to be more productive
+```
+
+To explain the usefulness of Print, we can see how to use the SystemTable to print to the console which is as follows
+
+```c
+SystemTable->ConOut->OutputString(SystemTable->ConOut,L"Hello World!\r\n");
+```
+
+> **Note** if we are not using `gnu-efi`. This InializeLib() is not even required. This is just a convenient function given by the library and not a UEFI related method
+
+### Print(L"Hello World!\n") 
+
+This functions is a utility given by gnu-efi that lets us print to console the `printf` way. 
+
+This a variadic function (It can take variable number of args). We can use Print like in the following example snippet
