@@ -479,8 +479,52 @@ SystemTable->ConOut->OutputString(SystemTable->ConOut,L"Hello World!\r\n");
 
 > **Note** if we are not using `gnu-efi`. This InializeLib() is not even required. This is just a convenient function given by the library and not a UEFI related method
 
-### Print(L"Hello World!\n") 
+### `Print(L"Hello World!\n")`
 
-This functions is a utility given by gnu-efi that lets us print to console the `printf` way. 
+This function is a utility provided by `gnu-efi` that lets us print to the console the `printf` way.
 
-This a variadic function (It can take variable number of args). We can use Print like in the following example snippet
+This is a variadic function (it can take a variable number of arguments). We can use `Print` like in the following example snippets:
+
+```c
+Print(L"This is a number %d", 123);
+Print(L"This is a string '%a'", "hello");
+```
+
+> **Note:** `gnu-efi` uses `%a` for ASCII (`char *`) strings and `%s` for Unicode (`CHAR16 *`) strings.
+
+#### What is with this `L` before the strings?
+
+This is because UEFI expects string characters to be 16 bits (`CHAR16`) instead of the regular 8-bit `char` type.
+
+UEFI was designed to support multiple languages from the start instead of restricting itself to ASCII.
+
+The `L` prefix is a C language construct and has nothing to do with UEFI specifically.
+
+For example:
+
+```c
+char *string = "This is a normal char * string";
+wchar_t *wide_string = L"This is a wide char string";
+```
+
+The `L` tells the compiler to create a **wide-character string literal** instead of a regular `char` string.
+
+UEFI's `Print()` expects a `CHAR16 *`, which is why almost every string passed to `Print()` begins with `L`.
+
+### `while(1);`
+
+This is just an infinite loop that keeps our program running. You may ask why we need to do it.
+
+The reason is that when our `efi_main()` function returns, execution is handed back to the UEFI firmware. Since this is a simple "Hello World" program, there is nothing else for it to do, so we keep it running by entering an infinite loop.
+
+Later, when we write a real bootloader, we won't do this. Instead, we'll finish our work and either return control to the firmware or transfer control to the operating system or kernel that we have loaded.
+
+### return EFI_SUCCESS;
+
+This is just our application returning an exit code of success back to the firmware. this is similar to 
+`return 0` in our regular C applications.
+
+> **Fun Fact**: From the firmware's perspective, the bootloader is just another UEFI application. Technically, once the kernel returns, execution would continue in the bootloader, allowing it to return an EFI_STATUS back to the firmware. In practice, however, this almost never happens. Operating system kernels take complete ownership of the machine—they replace the firmware's execution environment, reclaim the bootloader's memory, and continue running indefinitely. As a result, the bootloader's return statement is almost never executed.
+
+
+Now we have completed our understanding of the `hello world` UEFI application which is the first step towards writing an actual bootloader. We will look into the compilation part of this bootloader code in the coming pages.
